@@ -1,0 +1,24 @@
+bash startFabric.sh
+cd javascript
+npm install
+node enrollAdmin.js
+node addUser.js Bhumika
+node addUser.js Prabal
+node addReward.js Gift
+node addOutlet.js Fuelzone
+node addOutlet.js Dhabha
+node registerPurchase.js Juice 1 Fuelzone Bhumika
+node registerPurchase.js Juice 2 Fuelzone Bhumika
+node registerPurchase.js Juice 3 Fuelzone Bhumika
+node registerPurchase.js Juice 4 Fuelzone Bhumika
+node registerPurchase.js Juice 5 Fuelzone Bhumika
+node registerPurchase.js Juice 6 Fuelzone Bhumika
+node registerPurchase.js Juice 7 Fuelzone Bhumika
+node approvePurchase.js PURCHASE0 Fuelzone
+node approvePurchase.js PURCHASE1 Fuelzone
+node approvePurchase.js PURCHASE2 Fuelzone
+node approvePurchase.js PURCHASE3 Fuelzone
+node approvePurchase.js PURCHASE4 Fuelzone
+node approvePurchase.js PURCHASE5 Fuelzone
+node approvePurchase.js PURCHASE6 Fuelzone
+node redeemReward.js Bhumika Gift
