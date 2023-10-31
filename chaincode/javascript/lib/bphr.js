@@ -215,19 +215,16 @@ class bphr extends Contract {
 
         if (consecutiveDatesCount >= 7) {
             const reward = await this.getRewardByName(ctx, rewardName);
-            
+
             if (reward[0].Record.owner !== 'UNASSIGNED') {
                 throw new Error(`${userName} has already redeemed ${rewardName}`);
             }
             reward[0].Record.owner = userName;
-            await ctx.stub.putState(rewardName, Buffer.from(JSON.stringify(reward)));   // updating the reward in the ledger
+            await ctx.stub.putState(reward[0].Record.id, Buffer.from(JSON.stringify(reward[0].Record)));
             return JSON.stringify(reward);
         }
-
-        // throw new Error('Not eligible for reward redemption');
         if (consecutiveDatesCount < 7) {
             throw new Error(`${userName} has made only ${consecutiveDatesCount} purchases. Not eligible for reward redemption`);
-            // when you throw the error, the transaction is not submitted to the ledger
         }
     }
 
