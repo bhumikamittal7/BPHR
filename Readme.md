@@ -22,13 +22,12 @@ Open `bphr.js`.
 
 ## Global variables
 ```javascript
-let rewardID = 0;       // initializing the rewardID to 0 - this will be used to assign a unique ID to each reward
-let userID = 0;         // initializing the userID to 0 - this will be used to assign a unique ID to each user
-let outletID = 0;       // initializing the outletID to 0 - this will be used to assign a unique ID to each outlet
-let purchaseID = 0;     // initializing the purchaseID to 0 - this will be used to assign a unique ID to each purchase
-let purchaseRecord = [];    // initializing the purchaseRecord array - this will be used to store the purchase records
+let rewardID = 0;       
+let userID = 0;         
+let outletID = 0;       
+let purchaseID = 0;     
+let purchaseRecord = [];  
 ```
-
 ## Functions in the BPHR class
 
 1. The `registerRewards` function is used to register a reward - it takes in the `rewardName` as parameters
@@ -52,7 +51,7 @@ async registerRewards(ctx, rewardName) {
 ```javascript
 async registerUser(ctx, userName) {
     const user = {
-        id: `USER${userID++}`,   // assigning a unique ID to the user
+        id: `USER${userID++}`,   
         name: userName,
     };
     await ctx.stub.putState(user.id, Buffer.from(JSON.stringify(user)));
@@ -65,7 +64,7 @@ async registerUser(ctx, userName) {
 ```javascript
 async registerOutlet(ctx, outletName) {
     const outlet = {
-        id: `OUTLET${outletID++}`,   // assigning a unique ID to the outlet
+        id: `OUTLET${outletID++}`,   
         name: outletName,
     };
     await ctx.stub.putState(outlet.id, Buffer.from(JSON.stringify(outlet)));
@@ -76,13 +75,13 @@ async registerOutlet(ctx, outletName) {
 4. `registerPurchase` function is used to register a purchase - it takes in the `name`, `date`, `outletName`, `userID` as parameters
 
 ```javascript
-async registerPurchase(ctx, name, date, outletName, userID) {
+async registerPurchase(ctx, name, date, outletName, userName) {
     const purchase = {
         id: `PURCHASE${purchaseID++}`,
         name,
         date,
         outletName,         //outlet where the purchase was made
-        userID,             //user for made the purchase
+        userName,             //user for made the purchase
         validated: false,        // setting the validated field to false by default - this will be set to true when the purchase is approved by the outlet
     };
     await ctx.stub.putState(purchase.id, Buffer.from(JSON.stringify(purchase)));
@@ -119,63 +118,43 @@ async approvePurchase(ctx, purchaseID, outletName) {
 
 ```javascript
 async redeemReward(ctx, userName, rewardName) {
+    const userPurchases = await this.listPurchasesByUser(ctx, userName);
+    const consecutiveDatesCount = this.findConsecutiveDates(userPurchases);
 
-    const userPurchases = purchaseRecord.filter(p => p.userName === userName);
-    // Debugging: Log the value of userPurchases
-    console.log('User Purchases:', userPurchases);
+    if (consecutiveDatesCount >= 7) {
+        const reward = await this.getRewardByName(ctx, rewardName);
 
-    if (userPurchases.length >= 7) {
-        const consecutiveDatesCount = this.findConsecutiveDates(userPurchases, userName);
-
-        if (consecutiveDatesCount >= 7) {
-            const rewardAsBytes = await ctx.stub.getState(rewardName);
-            const reward = JSON.parse(rewardAsBytes.toString());
-            // Debugging: Log the value of reward
-            console.log('Reward:', reward);
-
-            // Check if the user has already redeemed the reward
-            if (reward.owner !== 'UNASSIGNED') {
-                throw new Error(`${userName} has already redeemed ${rewardName}`);
-            }
-            reward.owner = userName;
-            await ctx.stub.putState(rewardName, Buffer.from(JSON.stringify(reward)));
-            return JSON.stringify(reward);
+        if (reward[0].Record.owner !== 'UNASSIGNED') {
+            throw new Error(`${userName} has already redeemed ${rewardName}`);
         }
+        reward[0].Record.owner = userName;
+        await ctx.stub.putState(reward[0].Record.id, Buffer.from(JSON.stringify(reward[0].Record)));
+        return JSON.stringify(reward);
     }
-
-    throw new Error('Not eligible for reward redemption');
-}
- 
+    if (consecutiveDatesCount < 7) {
+        throw new Error(`${userName} has made only ${consecutiveDatesCount} purchases. Not eligible for reward redemption`);
+    }
+} 
 ```
 
 7. The `findConsecutiveDates` function takes in the purchases made by the user as a parameter and checks if the purchases are made on consecutive days
 
 ```javascript
-findConsecutiveDates(purchases, userName) {
-// dates are just integers for the sake of simplicity
-// we filter the purchases made by the user from userID 
-const userPurchases = purchases.filter(p => p.userName === userName);
-// we sort the purchases by date
-userPurchases.sort((a, b) => a.date - b.date);
-// we initialize the consecutiveDates array to store the consecutive dates
-let count = 1; // Initialize count to 1 since we have at least one purchase
-let maxCount = 1; // Initialize maxCount to 1
-
-for (let i = 0; i < userPurchases.length - 1; i++) {
-    // if the difference between the dates is 1, we increment the count by 1 and update the maxCount if count exceeds it
-    if (userPurchases[i + 1].date - userPurchases[i].date === 1) {
-        count++;
-        if (count > maxCount) {
-            maxCount = count; 
+findConsecutiveDates(purchases) {
+    let maxCount = 1;
+    let currentCount = 1;
+    for (let i = 0; i < purchases.length - 1; i++) {
+        const date1 = parseInt(purchases[i].Record.date);
+        const date2 = parseInt(purchases[i + 1].Record.date);
+        if (date2 - date1 === 1) {
+            currentCount++;
+            maxCount = Math.max(maxCount, currentCount);    
+        } else { 
+            currentCount = 1;
         }
-    } else {
-        count = 1; // Reset count if dates are not consecutive
     }
+    return maxCount;
 }
-
-return maxCount;
-}
-
 ```
 
 ## Application Code
@@ -232,6 +211,13 @@ Note that only the outlet where the purchase was made can approve the purchase. 
 node redeemReward.js <userName> <rewardName>
 ```
 
+## Test the network
+To test the network, run the following command:
+
+```bash
+bash testNetwork.sh
+```
+
 ## Fauxton - CouchDB
 
 We can access the CouchDB database using Fauxton. To access Fauxton, open the following URL in your browser:
@@ -239,6 +225,7 @@ We can access the CouchDB database using Fauxton. To access Fauxton, open the fo
 ```bash
 http://localhost:5984/_utils/
 ```
+
 ## Close the network
 
 To close the network, run the following command:

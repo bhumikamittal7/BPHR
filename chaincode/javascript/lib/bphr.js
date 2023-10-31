@@ -245,7 +245,7 @@ class bphr extends Contract {
             if (date2 - date1 === 1) {
                 // throw new Error(`${date1} and ${date2} are consecutive`);
                 currentCount++;
-                maxCount = Math.max(maxCount, currentCount);    // Math.max returns the maximum of the two numbers
+                maxCount = Math.max(maxCount, currentCount);
             } else { // else we reset the currentCount to 1
                 currentCount = 1;
             }
