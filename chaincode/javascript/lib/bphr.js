@@ -122,9 +122,18 @@ class bphr extends Contract {
         const queryResults = await this.queryWithQueryString(ctx, JSON.stringify(queryString));
         //return array of purchases
         return JSON.parse(queryResults.toString());
-
-
         }
+
+    // get reward by name
+    async getRewardByName(ctx, rewardName) {
+        const queryString = {
+            selector: {
+                name: rewardName,
+            },
+        };
+        const queryResults = await this.queryWithQueryString(ctx, JSON.stringify(queryString));
+        return JSON.parse(queryResults.toString());
+    }
 
     // the queryPurchaseRecord function returns the purchaseRecord array
     async queryPurchaseRecord(ctx) {
@@ -204,20 +213,14 @@ class bphr extends Contract {
         const userPurchases = await this.listPurchasesByUser(ctx, userName);
         const consecutiveDatesCount = this.findConsecutiveDates(userPurchases);
 
-        // if the user has made 7 or more purchases on consecutive days, we assign the reward to the user
-        // this doesn't go through the if statement because the userPurchases array is empty
-        // when we call the getAllResults function, we get an empty array if the user has not made any purchases
-
         if (consecutiveDatesCount >= 7) {
-            const rewardAsBytes = await ctx.stub.getState(rewardName);
-            const reward = JSON.parse(rewardAsBytes.toString());
-
-            if (reward.owner !== 'UNASSIGNED') {
+            const reward = await this.getRewardByName(ctx, rewardName);
+            
+            if (reward[0].Record.owner !== 'UNASSIGNED') {
                 throw new Error(`${userName} has already redeemed ${rewardName}`);
             }
-            reward.owner = userName;
+            reward[0].Record.owner = userName;
             await ctx.stub.putState(rewardName, Buffer.from(JSON.stringify(reward)));   // updating the reward in the ledger
-            
             return JSON.stringify(reward);
         }
 
