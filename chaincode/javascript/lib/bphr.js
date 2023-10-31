@@ -58,13 +58,13 @@ class bphr extends Contract {
     }
 
     // register Purchase function is used to register a purchase - it takes in the date, outletID, userID as parameters
-    async registerPurchase(ctx, name, date, outletName, userID) {
+    async registerPurchase(ctx, name, date, outletName, userName) {
         const purchase = {
             id: `PURCHASE${purchaseID++}`,
             name,
             date,
             outletName,         //outlet where the purchase was made
-            userID,             //user for made the purchase
+            userName,             //user for made the purchase
             validated: false,        // setting the validated field to false by default - this will be set to true when the purchase is approved by the outlet
         };
         await ctx.stub.putState(purchase.id, Buffer.from(JSON.stringify(purchase)));
@@ -81,7 +81,6 @@ class bphr extends Contract {
         const queryResults = await this.queryWithQueryString(ctx, JSON.stringify(queryString));
         return queryResults.toString();
     }
-
     
     // the queryUserID function takes in the userName as a parameter and returns the userID if it exists in the ledger
     async queryUserID(ctx, userName) {
@@ -114,19 +113,23 @@ class bphr extends Contract {
     }
 
     // list all the purchases made by a user
-    async listPurchasesByUser(ctx, userID) {
+    async listPurchasesByUser(ctx, userName) {
         const queryString = {
             selector: {
-                userID,
+                userName: userName,
             },
         };
-        const resultsIterator = await ctx.stub.getQueryResult(JSON.stringify(queryString));
-        const results = await this.getAllResults(resultsIterator, false);
-        // return result as an array of JSON objects - this will be useful when we call the findConsecutiveDates function 
-        return JSON.stringify(results);
+        const queryResults = await this.queryWithQueryString(ctx, JSON.stringify(queryString));
+        //return array of purchases
+        return JSON.parse(queryResults.toString());
 
 
         }
+
+    // the queryPurchaseRecord function returns the purchaseRecord array
+    async queryPurchaseRecord(ctx) {
+        return JSON.stringify(purchaseRecord);
+    }
 
     // the getAllResults function takes in the resultsIterator as a parameter and returns the results of the query
     async getAllResults(iterator, isHistory) {
@@ -174,11 +177,6 @@ class bphr extends Contract {
                 }
             }
         }
-
-    // the queryPurchaseRecord function returns the purchaseRecord array
-    async queryPurchaseRecord(ctx) {
-        return JSON.stringify(purchaseRecord);
-    }
     // the approvePurchase take in the purchaseID and outlet name as a parameter and sets the validated field to true for that purchase if it exists in the ledger and the outlet name matches
     async approvePurchase(ctx, purchaseID, outletName) {
         const purchaseAsBytes = await ctx.stub.getState(purchaseID);
@@ -200,73 +198,64 @@ class bphr extends Contract {
 
         return JSON.stringify(purchase);
     }
-
-    // // we take rewardName and userName as parameters and check if the user is eligible for the reward
-    // async redeemReward(ctx, userName, rewardName) {
-    //     const rewardAsBytes = await ctx.stub.getState(rewardName);     // getting the reward from the ledger
-    //     const reward = JSON.parse(rewardAsBytes.toString());     // converting the reward from bytes to JSON
-    //     const userPurchases = purchaseRecord.filter(p => p.userName === userName);   // filtering the purchaseRecord array to get the purchases made by the user
-
-
-    //     if (userPurchases.length >= 7) {     // if the user has made 7 or more purchases, we check if the purchases are made on consecutive days
-    //         const consecutiveDates = this.findConsecutiveDates(userPurchases, userName);       // we call the findConsecutiveDates function to check if the purchases are made on consecutive days
-    //         if (consecutiveDates >= 7) {      // if the user has made 7 or more purchases on consecutive days, we assign the reward to the user
-    //             reward.owner = userName;
-    //             await ctx.stub.putState(rewardName, Buffer.from(JSON.stringify(reward)));
-    //             return JSON.stringify(reward);
-    //         }
-    //     }
-    //     // else we throw an error
-    //     throw new Error('Not eligible for reward redemption');
-    // }
     
 
-async redeemReward(ctx, userName, rewardName) {
-    const queryString = {
-        selector: {
-            userID: userName,
-        },
-    };
-    const resultsIterator = await ctx.stub.getQueryResult(JSON.stringify(queryString));
-    const userPurchases = await this.getAllResults(resultsIterator, false);
+    async redeemReward(ctx, userName, rewardName) {
+        const userPurchases = await this.listPurchasesByUser(ctx, userName);
+        const consecutiveDatesCount = this.findConsecutiveDates(userPurchases);
 
-    const consecutiveDatesCount = this.findConsecutiveDates(userPurchases, userName);
+        // if the user has made 7 or more purchases on consecutive days, we assign the reward to the user
+        // this doesn't go through the if statement because the userPurchases array is empty
+        // when we call the getAllResults function, we get an empty array if the user has not made any purchases
 
-    if (consecutiveDatesCount >= 7) {
-        const rewardAsBytes = await ctx.stub.getState(rewardName);
-        const reward = JSON.parse(rewardAsBytes.toString());
+        if (consecutiveDatesCount >= 7) {
+            const rewardAsBytes = await ctx.stub.getState(rewardName);
+            const reward = JSON.parse(rewardAsBytes.toString());
 
-        if (reward.owner !== 'UNASSIGNED') {
-            throw new Error(`${userName} has already redeemed ${rewardName}`);
+            if (reward.owner !== 'UNASSIGNED') {
+                throw new Error(`${userName} has already redeemed ${rewardName}`);
+            }
+            reward.owner = userName;
+            await ctx.stub.putState(rewardName, Buffer.from(JSON.stringify(reward)));   // updating the reward in the ledger
+            
+            return JSON.stringify(reward);
         }
-        reward.owner = userName;
-        await ctx.stub.putState(rewardName, Buffer.from(JSON.stringify(reward)));
-        return JSON.stringify(reward);
-    }
 
-    throw new Error('Not eligible for reward redemption');
-}
+        // throw new Error('Not eligible for reward redemption');
+        if (consecutiveDatesCount < 7) {
+            throw new Error(`${userName} has made only ${consecutiveDatesCount} purchases. Not eligible for reward redemption`);
+            // when you throw the error, the transaction is not submitted to the ledger
+        }
+    }
 
 
 // the findConsecutiveDates function takes in the purchases made by the user as a parameter and checks if the purchases are made on consecutive days
-findConsecutiveDates(purchases, userName) {
-    let maxCount = 1;
-    let currentCount = 1;
-
-    for (let i = 0; i < purchases.length - 1; i++) {
-        if (purchases[i].userName === userName && purchases[i + 1].userName === userName) {
-            if (purchases[i + 1].date - purchases[i].date === 1) {
+    findConsecutiveDates(purchases) {
+        let maxCount = 1;
+        let currentCount = 1;
+        // throw new Error(`hello aarav: ${purchases}`);     //this shows that the length of this array is 0, so the for loop doesn't run
+        // for the purchases array, we check if the current purchase and the next purchase are made by the same user
+        for (let i = 0; i < purchases.length - 1; i++) {
+            // if the current purchase and the next purchase are made by the same user, we check if the dates are consecutive
+                // Extract and parse the date as an integer - this returns a number like 1, 2, 3, ...
+            const date1 = parseInt(purchases[i].Record.date);
+            const date2 = parseInt(purchases[i + 1].Record.date);
+            // throw new Error(`${date1} and ${date2} are consecutive`);
+            // if the difference between the dates is 1, we increment the currentCount and update the maxCount
+            if (date2 - date1 === 1) {
+                // throw new Error(`${date1} and ${date2} are consecutive`);
                 currentCount++;
-                maxCount = Math.max(maxCount, currentCount);
-            } else {
+                maxCount = Math.max(maxCount, currentCount);    // Math.max returns the maximum of the two numbers
+            } else { // else we reset the currentCount to 1
                 currentCount = 1;
             }
+        
         }
+        // we return the maxCount
+        // throw new Error(`Max consecutive dates: ${maxCount}`);
+
+        return maxCount;
     }
-
-    return maxCount;
-}
-
 
 }
 

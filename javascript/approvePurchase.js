@@ -44,16 +44,16 @@ async function main() {
         // Get the contract from the network.
         const contract = network.getContract('bphr');
 
-        // Query for outlet ID
-        const outletIDResponse = await contract.evaluateTransaction('queryOutletID', outletName);
-        const outletID = outletIDResponse.toString();
+        // // Query for outlet ID
+        // const outletIDResponse = await contract.evaluateTransaction('queryOutletID', outletName);
+        // const outletID = outletIDResponse.toString();
         
         // Submit the transaction to the chaincode
-        await contract.submitTransaction('approvePurchase', purchaseID, outletID);
+        await contract.submitTransaction('approvePurchase', purchaseID, outletName);
         // get the purchaseRecord array from the state and print it
         const purchaseRecordResponse = await contract.evaluateTransaction('queryPurchaseRecord');
         const purchaseRecord = JSON.parse(purchaseRecordResponse.toString());
-        console.log(`Purchase record: ${JSON.stringify(purchaseRecord)}`);
+        // console.log(`Purchase record: ${JSON.stringify(purchaseRecord)}`);
         // print length of purchaseRecord array
         console.log(`Length of purchase record: ${purchaseRecord.length}`);
         console.log(`Transaction for purchase ID ${purchaseID} has been approved`);

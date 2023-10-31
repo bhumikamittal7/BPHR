@@ -231,3 +231,18 @@ Note that only the outlet where the purchase was made can approve the purchase. 
 ```bash
 node redeemReward.js <userName> <rewardName>
 ```
+
+## Fauxton - CouchDB
+
+We can access the CouchDB database using Fauxton. To access Fauxton, open the following URL in your browser:
+
+```bash
+http://localhost:5984/_utils/
+```
+## Close the network
+
+To close the network, run the following command:
+
+```bash
+bash networkDown.sh
+```

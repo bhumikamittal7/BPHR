@@ -44,9 +44,13 @@ async function main() {
         // Get the contract from the network.
         const contract = network.getContract('bphr');
 
+        //call the purchase array and print the result
+        const result = await contract.evaluateTransaction('listPurchasesByUser', userName);
+        console.log(`Transaction has been evaluated, result is: ${result}`);
+
         // Submit the transaction to the chaincode
         await contract.submitTransaction('redeemReward', userName, rewardName);
-        console.log(`Transaction for user ${username} and reward ${rewardName} has been submitted`);
+        console.log(`Transaction for user ${userName} and reward ${rewardName} has been submitted`);
 
         // Disconnect from the gateway.
         await gateway.disconnect();

@@ -66,14 +66,14 @@ async function main() {
         const outletIDResponse = await contract.evaluateTransaction('queryOutletID', outletName);
         const outletID = outletIDResponse.toString();
 
-        // Query for user ID
-        const userIDResponse = await contract.evaluateTransaction('queryUserID', userName);
-        const userID = userIDResponse.toString();
+        // // Query for user ID
+        // const userIDResponse = await contract.evaluateTransaction('queryUserID', userName);
+        // const userID = userIDResponse.toString();
 
         // Submit the transaction to the chaincode with IDs
-        await contract.submitTransaction('registerPurchase', name, date, outletID, userID);
+        await contract.submitTransaction('registerPurchase', name, date, outletName, userName);
         //print the transaction
-        console.log(`Transaction has been submitted,\n Item Purchased: ${name}\n, date: ${date}\n, outlet: ${outletID}\n, user: ${userID}`);
+        console.log(`Transaction has been submitted,\n Item Purchased: ${name}\n, date: ${date}\n, outlet: ${outletID}\n, user: ${userName}`);
 
         // Disconnect from the gateway.
         await gateway.disconnect();

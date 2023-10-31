@@ -46,18 +46,4 @@ JavaScript:
 
   Next, install all required packages:
     npm install
-
-  Then run the following applications to enroll the admin user, and register a new user
-  called appUser which will be used by the other applications to interact with the deployed
-  FabCar contract:
-    node enrollAdmin
-    node registerUser
-
-  You can run the invoke application as follows. By default, the invoke application will
-  create a new car, but you can update the application to submit other transactions:
-    node invoke
-
-  You can run the query application as follows. By default, the query application will
-  return all cars, but you can update the application to evaluate other transactions:
-    node query
 EOF

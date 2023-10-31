@@ -1,6 +1,5 @@
 bash startFabric.sh
 cd javascript
-npm install
 node enrollAdmin.js
 node addUser.js Bhumika
 node addUser.js Prabal
@@ -22,3 +21,21 @@ node approvePurchase.js PURCHASE4 Fuelzone
 node approvePurchase.js PURCHASE5 Fuelzone
 node approvePurchase.js PURCHASE6 Fuelzone
 node redeemReward.js Bhumika Gift
+
+
+bash startFabric.sh
+cd javascript
+node enrollAdmin.js
+node addUser.js Bhumika
+node addUser.js Prabal
+node addReward.js Gift
+node addOutlet.js Fuelzone
+node registerPurchase.js Juice 1 Fuelzone Bhumika
+node registerPurchase.js Juice 2 Fuelzone Bhumika
+node registerPurchase.js Juice 3 Fuelzone Bhumika
+node approvePurchase.js PURCHASE0 Fuelzone
+node approvePurchase.js PURCHASE1 Fuelzone
+node approvePurchase.js PURCHASE2 Fuelzone
+node redeemReward.js Bhumika Gift
+
+docker logs peer0.org1.example.com
