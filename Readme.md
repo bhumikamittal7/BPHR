@@ -1,5 +1,17 @@
 # BPHR Documentation
 
+## Overview
+
+The university, in its efforts to promote healthy living within its community, has decided to implement the following measures. It announces a reward for anyone who drinks a glass of fruit juice for 7 consecutive days (just a place holder - couldn’t think of any thing else :)). However, there is a question of who will validate if someone comes forward claiming to have completed this challenge. It has been decided that the fruit juice needed for this challenge must be purchased from one of the outlets within the university. Subsequently, anyone who completes the challenge must provide proof of these purchases. The reward will be given only if the purchases are made on 7 consecutive dates.
+
+To achieve this, we will be developing an application called 'BPHR' (Blockchain-Powered Health Rewards :)) on Hyperledger Fabric. The features of BPHR are as follows:
+- The application allows the university to list rewards
+- It enables food outlets to register.
+- Users can make transactions to register their purchases, specifying the date of purchase and the outlet where the purchase was made.
+- Food outlets can make transactions to approve a user's purchase claim.
+- Users can redeem a reward (transferring ownership from the university to the user) only if their purchases on 7 consecutive days have been validated by some outlets.
+
+## Usage
 Make sure you are in the `./fabric-sample/bphr` directory.
 
 Run this script to shut down the network (if running), start the test-network, and finally install the chaincode.
@@ -16,7 +28,7 @@ cd fabric-samples/bphr/chaincode/javascript/lib
 
 Open `bphr.js`.
 
-## Imports
+### Imports
 1. `Contract` class from `fabric-contract-api` module. Note: `BPHR` class extends `Contract` class.
 2. `ClientIdentity` class from `fabric-shim` module. This class will be used to get the ID of the invoking identity.
 
@@ -28,7 +40,7 @@ let outletID = 0;
 let purchaseID = 0;     
 let purchaseRecord = [];  
 ```
-## Functions in the BPHR class
+### Functions in the BPHR class
 
 1. The `registerRewards` function is used to register a reward - it takes in the `rewardName` as parameters
 
@@ -157,7 +169,7 @@ findConsecutiveDates(purchases) {
 }
 ```
 
-## Application Code
+### Application Code
 
 1. The `enrollAdmin.js` file is used to enroll the admin user. The admin user is used to register new users, outlets, and rewards. The admin user is also used to approve purchases and assign rewards to users.
 
@@ -211,14 +223,14 @@ Note that only the outlet where the purchase was made can approve the purchase. 
 node redeemReward.js <userName> <rewardName>
 ```
 
-## Test the network
+### Test the network
 To test the network, run the following command:
 
 ```bash
 bash testNetwork.sh
 ```
 
-## Fauxton - CouchDB
+### Fauxton - CouchDB
 
 We can access the CouchDB database using Fauxton. To access Fauxton, open the following URL in your browser:
 
@@ -226,7 +238,7 @@ We can access the CouchDB database using Fauxton. To access Fauxton, open the fo
 http://localhost:5984/_utils/
 ```
 
-## Close the network
+### Close the network
 
 To close the network, run the following command:
 
